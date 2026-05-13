@@ -21,6 +21,33 @@ const HAT_FEATHERS = [
 ];
 const NOISE_PARTICLE_COUNT = 2500;
 const NECKLACE_BEAD_COUNT = 18;
+const NOISE_RGB_THRESHOLDS = { r: 0.54, g: 0.45, b: 0.4 };
+
+function hexToRgb(hex) {
+  const normalized = hex.replace("#", "");
+  if (normalized.length !== 6) return { r: 0, g: 0, b: 0 };
+  return {
+    r: parseInt(normalized.slice(0, 2), 16),
+    g: parseInt(normalized.slice(2, 4), 16),
+    b: parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex(r, g, b) {
+  const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+  return `#${[clamp(r), clamp(g), clamp(b)].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function mixHex(colorA, colorB, t) {
+  const a = hexToRgb(colorA);
+  const b = hexToRgb(colorB);
+  return rgbToHex(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t);
+}
+
+function withAlpha(hex, alpha) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 function drawStipple(ctx, x, y, r, color, rng, density = 40, minRadius = 0.25, maxRadius = 1.4) {
   ctx.fillStyle = color;
@@ -115,9 +142,9 @@ function drawCurvedBeak(ctx, startX, startY, scale, palette, rng, variant) {
   ctx.fill(upperPath);
 
   const lowerGrad = ctx.createLinearGradient(startX, startY + scale * 0.4, tipX, tipY + scale * 0.2);
-  lowerGrad.addColorStop(0, "rgba(80,50,10,0.25)");
-  lowerGrad.addColorStop(0.6, "rgba(40,20,5,0.25)");
-  lowerGrad.addColorStop(1, "rgba(20,8,0,0.35)");
+  lowerGrad.addColorStop(0, withAlpha(mixHex(palette.beak[0], "#000000", 0.45), 0.26));
+  lowerGrad.addColorStop(0.6, withAlpha(mixHex(palette.beak[1], "#000000", 0.55), 0.24));
+  lowerGrad.addColorStop(1, withAlpha(mixHex(palette.beak[1], "#000000", 0.72), 0.34));
   ctx.fillStyle = lowerGrad;
   ctx.fill(lowerPath);
 
@@ -167,7 +194,7 @@ function drawCharacter(canvas, seed) {
   ctx.fillRect(0, 0, W, H);
 
   for (let i = 0; i < NOISE_PARTICLE_COUNT; i++) {
-    ctx.fillStyle = `rgba(${rng() > 0.54 ? 255 : 0},${rng() > 0.45 ? 255 : 0},${rng() > 0.4 ? 255 : 0},0.02)`;
+    ctx.fillStyle = `rgba(${rng() > NOISE_RGB_THRESHOLDS.r ? 255 : 0},${rng() > NOISE_RGB_THRESHOLDS.g ? 255 : 0},${rng() > NOISE_RGB_THRESHOLDS.b ? 255 : 0},0.02)`;
     ctx.fillRect(rng() * W, rng() * H, 1, 1);
   }
 
@@ -179,9 +206,11 @@ function drawCharacter(canvas, seed) {
   ctx.translate(cx, cy + headR * 1.18);
 
   const torsoGrad = ctx.createLinearGradient(-headR * 1.6, -headR * 0.2, headR * 1.7, headR * 2.25);
+  const clothMid = mixHex(palette.cloth, "#2f6b4d", 0.35);
+  const clothDark = mixHex(palette.cloth, "#000000", 0.42);
   torsoGrad.addColorStop(0, palette.cloth);
-  torsoGrad.addColorStop(0.5, "#244734");
-  torsoGrad.addColorStop(1, "#193724");
+  torsoGrad.addColorStop(0.5, clothMid);
+  torsoGrad.addColorStop(1, clothDark);
 
   ctx.fillStyle = torsoGrad;
   ctx.beginPath();
@@ -291,9 +320,9 @@ function drawCharacter(canvas, seed) {
   ctx.fill();
 
   const headGrad = ctx.createRadialGradient(-headR * 0.25, -headR * 0.28, headR * 0.25, 0, 0, headR * 1.02);
-  headGrad.addColorStop(0, "#30523e");
+  headGrad.addColorStop(0, mixHex(palette.skin, "#82bf9d", 0.22));
   headGrad.addColorStop(0.45, palette.skin);
-  headGrad.addColorStop(1, "#102315");
+  headGrad.addColorStop(1, mixHex(palette.skin, "#000000", 0.5));
   ctx.fillStyle = headGrad;
   ctx.beginPath();
   ctx.arc(0, 0, headR, 0, Math.PI * 2);
@@ -400,9 +429,11 @@ function drawCharacter(canvas, seed) {
   ctx.fill();
 
   const brimGrad = ctx.createLinearGradient(-headR * 1.4, -headR * 0.35, headR * 1.4, headR * 0.35);
+  const hatMid = mixHex(palette.hat, "#1f5f45", 0.28);
+  const hatDark = mixHex(palette.hat, "#000000", 0.36);
   brimGrad.addColorStop(0, palette.hat);
-  brimGrad.addColorStop(0.45, "#183a2a");
-  brimGrad.addColorStop(1, "#0f2a1d");
+  brimGrad.addColorStop(0.45, hatMid);
+  brimGrad.addColorStop(1, hatDark);
   ctx.fillStyle = brimGrad;
   ctx.beginPath();
   ctx.ellipse(0, 0, headR * 1.42, headR * 0.3, 0, 0, Math.PI * 2);
@@ -415,7 +446,7 @@ function drawCharacter(canvas, seed) {
   ctx.stroke();
 
   const crownGrad = ctx.createLinearGradient(0, -headR * 1.28, 0, 0);
-  crownGrad.addColorStop(0, "#214935");
+  crownGrad.addColorStop(0, mixHex(palette.hat, "#5fa881", 0.24));
   crownGrad.addColorStop(1, palette.hat);
   ctx.fillStyle = crownGrad;
   ctx.beginPath();
