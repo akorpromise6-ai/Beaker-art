@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 const PALETTES = [
   { bg: "#f4a7b9", skin: "#2d1b3d", beak: ["#e8a87c", "#c97b4b"], hat: "#4a2d7a", cloth: "#3d2060", accent: "#c9a0e8", dot: "#6b3fa0" },
@@ -20,17 +20,25 @@ const HAT_FEATHERS = [
   [{ x: 0.05, y: -1.1 }, { x: -0.15, y: -1.6 }, { x: 0.25, y: -1.4 }],
 ];
 
-function drawStipple(ctx, x, y, r, color, density = 40) {
+function drawStipple(ctx, x, y, r, color, rng, density = 40) {
   ctx.fillStyle = color;
   for (let i = 0; i < density; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = Math.random() * r;
+    const angle = rng() * Math.PI * 2;
+    const dist = rng() * r;
     const px = x + Math.cos(angle) * dist;
     const py = y + Math.sin(angle) * dist;
     ctx.beginPath();
-    ctx.arc(px, py, Math.random() * 1.5 + 0.3, 0, Math.PI * 2);
+    ctx.arc(px, py, rng() * 1.5 + 0.3, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+function createSeededRng(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
 }
 
 function drawCrossHatch(ctx, x, y, w, h, color, spacing = 8) {
@@ -51,15 +59,10 @@ function drawCrossHatch(ctx, x, y, w, h, color, spacing = 8) {
 }
 
 function generateBeak(seed) {
-  const rng = (() => {
-    let s = seed;
-    return () => {
-      s = (s * 1664525 + 1013904223) & 0xffffffff;
-      return (s >>> 0) / 0xffffffff;
-    };
-  })();
+  const rng = createSeededRng(seed);
 
-  const palette = PALETTES[Math.floor(rng() * PALETTES.length)];
+  const paletteIdx = Math.floor(rng() * PALETTES.length);
+  const palette = PALETTES[paletteIdx];
   const beakIdx = Math.floor(rng() * BEAK_SHAPES.length);
   const hatFeatherIdx = Math.floor(rng() * HAT_FEATHERS.length);
   const hasNecklace = rng() > 0.4;
@@ -68,8 +71,10 @@ function generateBeak(seed) {
   const clothStripes = rng() > 0.4;
   const hatTilt = (rng() - 0.5) * 15;
   const beakTilt = rng() * 20 - 5;
+  const flowerColors = ["#ffffff", "#f8e0f0", "#e0f0e8"];
+  const flowerColor = flowerColors[Math.floor(rng() * flowerColors.length)];
 
-  return { palette, beakIdx, hatFeatherIdx, hasNecklace, hasFlower, hasEyepatch, clothStripes, hatTilt, beakTilt, rng };
+  return { palette, paletteIdx, beakIdx, hatFeatherIdx, hasNecklace, hasFlower, hasEyepatch, clothStripes, hatTilt, beakTilt, flowerColor, rng };
 }
 
 function drawCharacter(canvas, seed) {
@@ -80,7 +85,7 @@ function drawCharacter(canvas, seed) {
   const H = canvas.height;
   ctx.clearRect(0, 0, W, H);
 
-  const { palette, beakIdx, hatFeatherIdx, hasNecklace, hasFlower, hasEyepatch, clothStripes, hatTilt, beakTilt, rng } = generateBeak(seed);
+  const { palette, beakIdx, hatFeatherIdx, hasNecklace, hasFlower, hasEyepatch, clothStripes, hatTilt, beakTilt, flowerColor, rng } = generateBeak(seed);
 
   ctx.fillStyle = palette.bg;
   ctx.fillRect(0, 0, W, H);
@@ -186,7 +191,7 @@ function drawCharacter(canvas, seed) {
   ctx.arc(0, 0, headR, 0, Math.PI * 2);
   ctx.fill();
 
-  drawStipple(ctx, 0, 0, headR * 0.9, palette.dot, 80);
+  drawStipple(ctx, 0, 0, headR * 0.9, palette.dot, rng, 80);
 
   ctx.fillStyle = "rgba(255,255,255,0.05)";
   ctx.beginPath();
@@ -268,17 +273,15 @@ function drawCharacter(canvas, seed) {
   }
   ctx.globalAlpha = 1;
 
-  drawStipple(ctx, beakStartX + beakScale * 0.7, beakStartY + beakScale * 0.5, beakScale * 0.35, palette.beak[1], 30);
+  drawStipple(ctx, beakStartX + beakScale * 0.7, beakStartY + beakScale * 0.5, beakScale * 0.35, palette.beak[1], rng, 30);
 
   ctx.restore();
 
   if (hasFlower) {
     ctx.save();
     ctx.translate(cx + headR * 0.8, cy + headR * 0.4);
-    const flowerColors = ["#ffffff", "#f8e0f0", "#e0f0e8"];
-    const fc = flowerColors[Math.floor(rng() * flowerColors.length)];
     for (let p = 0; p < 5; p++) {
-      ctx.fillStyle = fc;
+      ctx.fillStyle = flowerColor;
       ctx.save();
       ctx.rotate((p / 5) * Math.PI * 2);
       ctx.beginPath();
@@ -415,8 +418,9 @@ export default function BeaksArt() {
     }, 100);
   };
 
-  const palIdx = seed % PALETTES.length;
-  const pal = PALETTES[palIdx];
+  const generated = useMemo(() => generateBeak(seed), [seed]);
+  const palIdx = generated.paletteIdx;
+  const pal = generated.palette;
   const paletteColors = [pal.bg, pal.skin, pal.beak[0], pal.beak[1], pal.hat, pal.accent];
 
   return (
