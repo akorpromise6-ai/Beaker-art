@@ -35,7 +35,7 @@ function drawStipple(ctx, x, y, r, color, rng, density = 40) {
   }
 }
 
-function createSeededRng(seed) {
+function createSeededRandom(seed) {
   let s = seed;
   return () => {
     // Numerical Recipes 32-bit LCG constants.
@@ -62,10 +62,10 @@ function drawCrossHatch(ctx, x, y, w, h, color, spacing = 8) {
 }
 
 function generateBeak(seed) {
-  const rng = createSeededRng(seed);
+  const rng = createSeededRandom(seed);
 
-  const paletteIdx = Math.floor(rng() * PALETTES.length);
-  const palette = PALETTES[paletteIdx];
+  const paletteIndex = Math.floor(rng() * PALETTES.length);
+  const palette = PALETTES[paletteIndex];
   const beakIdx = Math.floor(rng() * BEAK_SHAPES.length);
   const hatFeatherIdx = Math.floor(rng() * HAT_FEATHERS.length);
   const hasNecklace = rng() > 0.4;
@@ -77,7 +77,7 @@ function generateBeak(seed) {
   const flowerColors = ["#ffffff", "#f8e0f0", "#e0f0e8"];
   const flowerColor = flowerColors[Math.floor(rng() * flowerColors.length)];
 
-  return { palette, paletteIdx, beakIdx, hatFeatherIdx, hasNecklace, hasFlower, hasEyepatch, clothStripes, hatTilt, beakTilt, flowerColor, rng };
+  return { palette, paletteIndex, beakIdx, hatFeatherIdx, hasNecklace, hasFlower, hasEyepatch, clothStripes, hatTilt, beakTilt, flowerColor, rng };
 }
 
 function drawCharacter(canvas, seed) {
@@ -422,7 +422,7 @@ export default function BeaksArt() {
   };
 
   const generated = generateBeak(seed);
-  const paletteIndex = generated.paletteIdx;
+  const paletteIndex = generated.paletteIndex;
   const palette = generated.palette;
   const paletteColors = [palette.bg, palette.skin, palette.beak[0], palette.beak[1], palette.hat, palette.accent];
 
@@ -459,8 +459,8 @@ export default function BeaksArt() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12, opacity: 0.8 }}>Palette {paletteIndex + 1}</span>
-            {paletteColors.map((color) => (
-              <span key={color} style={{ width: 14, height: 14, borderRadius: 999, background: color, border: "1px solid rgba(255,255,255,0.25)" }} />
+            {paletteColors.map((color, index) => (
+              <span key={index} style={{ width: 14, height: 14, borderRadius: 999, background: color, border: "1px solid rgba(255,255,255,0.25)" }} />
             ))}
             <button
               onClick={generate}
