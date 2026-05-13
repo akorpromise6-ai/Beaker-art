@@ -417,6 +417,7 @@ export default function BeaksArt() {
 
   const palIdx = seed % PALETTES.length;
   const pal = PALETTES[palIdx];
+  const paletteColors = [pal.bg, pal.skin, pal.beak[0], pal.beak[1], pal.hat, pal.accent];
 
   return (
     <section
@@ -451,7 +452,7 @@ export default function BeaksArt() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12, opacity: 0.8 }}>Palette {palIdx + 1}</span>
-            {[pal.bg, pal.skin, pal.beak[0], pal.beak[1], pal.hat, pal.accent].map((c) => (
+            {paletteColors.map((c) => (
               <span key={c} style={{ width: 14, height: 14, borderRadius: 999, background: c, border: "1px solid rgba(255,255,255,0.25)" }} />
             ))}
             <button
