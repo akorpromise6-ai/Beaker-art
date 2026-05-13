@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 const PALETTES = [
   { bg: "#f4a7b9", skin: "#2d1b3d", beak: ["#e8a87c", "#c97b4b"], hat: "#4a2d7a", cloth: "#3d2060", accent: "#c9a0e8", dot: "#6b3fa0" },
@@ -377,14 +377,14 @@ function drawCharacter(canvas, seed) {
   ctx.strokeRect(18, 18, W - 36, H - 36);
 
   const corners = [[22, 22], [W - 22, 22], [22, H - 22], [W - 22, H - 22]];
-  corners.forEach(([cx2, cy2]) => {
+  corners.forEach(([cornerX, cornerY]) => {
     ctx.fillStyle = palette.dot;
     ctx.beginPath();
-    ctx.arc(cx2, cy2, 8, 0, Math.PI * 2);
+    ctx.arc(cornerX, cornerY, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = palette.accent;
     ctx.beginPath();
-    ctx.arc(cx2, cy2, 4, 0, Math.PI * 2);
+    ctx.arc(cornerX, cornerY, 4, 0, Math.PI * 2);
     ctx.fill();
   });
 
@@ -421,10 +421,10 @@ export default function BeaksArt() {
     }, 100);
   };
 
-  const generated = useMemo(() => generateBeak(seed), [seed]);
-  const palIdx = generated.paletteIdx;
-  const pal = generated.palette;
-  const paletteColors = [pal.bg, pal.skin, pal.beak[0], pal.beak[1], pal.hat, pal.accent];
+  const generated = generateBeak(seed);
+  const paletteIndex = generated.paletteIdx;
+  const palette = generated.palette;
+  const paletteColors = [palette.bg, palette.skin, palette.beak[0], palette.beak[1], palette.hat, palette.accent];
 
   return (
     <section
@@ -458,9 +458,9 @@ export default function BeaksArt() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, opacity: 0.8 }}>Palette {palIdx + 1}</span>
-            {paletteColors.map((c) => (
-              <span key={c} style={{ width: 14, height: 14, borderRadius: 999, background: c, border: "1px solid rgba(255,255,255,0.25)" }} />
+            <span style={{ fontSize: 12, opacity: 0.8 }}>Palette {paletteIndex + 1}</span>
+            {paletteColors.map((color) => (
+              <span key={color} style={{ width: 14, height: 14, borderRadius: 999, background: color, border: "1px solid rgba(255,255,255,0.25)" }} />
             ))}
             <button
               onClick={generate}
