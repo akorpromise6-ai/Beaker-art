@@ -19,6 +19,8 @@ const HAT_FEATHERS = [
   [{ x: -0.1, y: -0.9 }, { x: 0.15, y: -1.5 }, { x: -0.2, y: -1.3 }, { x: 0.35, y: -1.1 }],
   [{ x: 0.05, y: -1.1 }, { x: -0.15, y: -1.6 }, { x: 0.25, y: -1.4 }],
 ];
+const NOISE_PARTICLE_COUNT = 3000;
+const NECKLACE_BEAD_COUNT = 18;
 
 function drawStipple(ctx, x, y, r, color, rng, density = 40) {
   ctx.fillStyle = color;
@@ -36,6 +38,7 @@ function drawStipple(ctx, x, y, r, color, rng, density = 40) {
 function createSeededRng(seed) {
   let s = seed;
   return () => {
+    // Numerical Recipes 32-bit LCG constants.
     s = (s * 1664525 + 1013904223) & 0xffffffff;
     return (s >>> 0) / 0xffffffff;
   };
@@ -96,7 +99,7 @@ function drawCharacter(canvas, seed) {
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, W, H);
 
-  for (let i = 0; i < 3000; i++) {
+  for (let i = 0; i < NOISE_PARTICLE_COUNT; i++) {
     ctx.fillStyle = `rgba(${rng() > 0.5 ? 255 : 0},${rng() > 0.5 ? 255 : 0},${rng() > 0.5 ? 255 : 0},0.015)`;
     ctx.fillRect(rng() * W, rng() * H, 1, 1);
   }
@@ -154,7 +157,7 @@ function drawCharacter(canvas, seed) {
   if (hasNecklace) {
     ctx.save();
     ctx.translate(cx, cy + headR * 1.0);
-    const beadCount = 18;
+    const beadCount = NECKLACE_BEAD_COUNT;
     ctx.strokeStyle = palette.accent;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
